@@ -162,11 +162,13 @@ textarea:focus-visible {
 }
 
 .nav {
+  position: relative;
   width: min(calc(100% - 48px), var(--max));
   min-height: 64px;
   margin: 0 auto;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 18px;
 }
 
@@ -180,6 +182,64 @@ textarea:focus-visible {
   display: block;
   width: clamp(120px, 12vw, 160px);
   height: auto;
+}
+
+.nav-links {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.28rem;
+  color: var(--text-soft);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transform: translate(-50%, -50%);
+}
+
+.nav-links a {
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 0 0.78rem;
+  border-radius: 999px;
+  overflow: hidden;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.nav-links a::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: inherit;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.055)),
+    radial-gradient(circle at 22% 18%, rgba(255, 255, 255, 0.34), transparent 38%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 10px 24px rgba(0, 0, 0, 0.22);
+  opacity: 0;
+  transform: scaleX(0.84) scaleY(0.78);
+  transition: opacity 0.22s ease, transform 0.28s cubic-bezier(0.2, 0.8, 0.22, 1);
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+}
+
+.nav-links a:hover,
+.nav-links a:focus-visible {
+  color: var(--gold);
+  transform: translateY(-1px);
+}
+
+.nav-links a:hover::before,
+.nav-links a:focus-visible::before {
+  opacity: 1;
+  transform: scale(1);
 }
 
 .nav-cta,
@@ -207,7 +267,6 @@ textarea:focus-visible {
 }
 
 .nav-cta {
-  margin-left: auto;
   flex-shrink: 0;
   padding: 0 1rem;
 }
@@ -1023,6 +1082,10 @@ textarea:focus-visible {
     min-height: 62px;
   }
 
+  .nav-links {
+    display: none;
+  }
+
   .trust-strip,
   .services-grid {
     grid-template-columns: 1fr 1fr;
@@ -1346,6 +1409,12 @@ textarea:focus-visible {
       <a href="#hero" class="brand" aria-label="AMH Tourism home">
         <img class="brand-logo" src="AMH-goldblack-logo.png" alt="AMH Tourism">
       </a>
+      <div class="nav-links" aria-label="Primary navigation">
+        <a href="#services">Services</a>
+        <a href="#process">Platform</a>
+        <a href="#proof">About</a>
+        <a href="#lead-form">Contact</a>
+      </div>
       <a href="#lead-form" class="nav-cta">Request consultation</a>
     </nav>
   </header>
@@ -1356,9 +1425,9 @@ textarea:focus-visible {
       <div class="hero">
         <div class="hero-copy">
           <p class="eyebrow">Corporate travel, MICE and executive hospitality</p>
-          <h1>Corporate travel handled with precision across the GCC and beyond.</h1>
+          <h1>Every Journey<br>Your Team Takes<br>Matters.</h1>
           <p class="hero-sub">
-            AMH Tourism manages flights, hotels, transfers, visas, group movements and urgent travel changes for organisations that need reliable execution, clear reporting and human support.
+            End-to-end corporate travel management, event logistics and executive hospitality. Handled with precision, so your people focus on what they do best.
           </p>
 
           <div class="hero-actions" aria-label="Primary actions">
@@ -1390,7 +1459,7 @@ textarea:focus-visible {
             </div>
             <div>
               <strong>100%</strong>
-              <span>UAE owned and operated</span>
+              <span>UAE owned</span>
             </div>
           </div>
           <p class="snapshot-note">Built for corporate travel programmes where timing, approvals and accountability matter.</p>
