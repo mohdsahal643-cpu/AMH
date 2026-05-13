@@ -1,24 +1,17 @@
 document.addEventListener('DOMContentLoaded', () => {
-  const leadForm = document.querySelector('.lead-form');
+  const leadForms = Array.from(document.querySelectorAll('.lead-form'));
   const toastNode = document.querySelector('[data-form-toast]');
   const motionSections = Array.from(document.querySelectorAll('.motion-section'));
-  const dropdown = document.querySelector('[data-dropdown]');
-  const dropdownTrigger = dropdown?.querySelector('[data-dropdown-trigger]');
-  const dropdownMenu = dropdown?.querySelector('[data-dropdown-menu]');
-  const dropdownLabel = dropdown?.querySelector('[data-dropdown-label]');
-  const dropdownInput = dropdown?.querySelector('[data-dropdown-input]');
-  const dropdownOptions = dropdown ? Array.from(dropdown.querySelectorAll('.enquiry-option')) : [];
-  const requiredFieldOrder = ['name', 'custom_company', 'email', 'custom_phone', 'custom_enquiry_type', 'custom_message'];
-  const RATE_LIMIT_KEY = 'amh_lead_form_rate_limit_v1';
-  const RATE_LIMIT_MAX_SUBMISSIONS = 3;
-  const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
-  const MIN_SUBMIT_DELAY_MS = 3500;
-  const pageLoadTime = Date.now();
-  let submitResetTimer = null;
+  const requiredFieldOrder = ['name', 'custom_company', 'email', 'custom_enquiry_type'];
+  const maxFieldLengths = {
+    name: 90,
+    custom_company: 120,
+    email: 120,
+    custom_phone: 32,
+    custom_message: 1200
+  };
   let toastResetTimer = null;
-  let activeOptionIndex = -1;
-  let motionObserver = null;
-  let isSubmitFeedbackActive = false;
+  const submittingForms = new WeakSet();
 
   const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
   const desktopMotionQuery = window.matchMedia('(min-width: 901px)');
@@ -55,22 +48,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }, type === 'error' ? 3400 : 3000);
   };
 
-  const getFieldLabel = (field) => {
-    if (!field) return 'this field';
-    const fieldId = field.getAttribute('id');
-    if (!fieldId) return field.name || 'this field';
-    const label = leadForm?.querySelector(`label[for="${fieldId}"]`);
-    return label?.textContent?.trim() || field.name || 'this field';
-  };
-
   const applyMotionState = () => {
     if (!motionSections.length) return;
 
     if (!shouldAnimateDesktop() || !('IntersectionObserver' in window)) {
-      if (motionObserver) {
-        motionObserver.disconnect();
-        motionObserver = null;
-      }
       motionSections.forEach((section) => section.classList.add('is-visible'));
       return;
     }
@@ -79,8 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
       section.style.setProperty('--stagger', `${index * 42}ms`);
     });
 
-    if (motionObserver) motionObserver.disconnect();
-    motionObserver = new IntersectionObserver((entries, io) => {
+    const motionObserver = new IntersectionObserver((entries, io) => {
       entries.forEach((entry) => {
         if (!entry.isIntersecting) return;
         entry.target.classList.add('is-visible');
@@ -89,8 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }, { threshold: 0.16, rootMargin: '0px 0px -8% 0px' });
 
     motionSections.forEach((section) => {
-      if (section.classList.contains('is-visible')) return;
-      motionObserver.observe(section);
+      if (!section.classList.contains('is-visible')) motionObserver.observe(section);
     });
   };
 
@@ -98,85 +77,86 @@ document.addEventListener('DOMContentLoaded', () => {
   bindMediaChange(desktopMotionQuery, applyMotionState);
   bindMediaChange(reducedMotionQuery, applyMotionState);
 
-  const getSelectedOptionIndex = () => {
-    if (!dropdownInput) return -1;
-    const currentValue = dropdownInput.value.trim();
-    return dropdownOptions.findIndex((option) => (option.getAttribute('data-value') || '').trim() === currentValue);
+  const getLeadFormAction = (form) => {
+    const action = form.getAttribute('action') || '';
+    if (!action || action === 'PASTE_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE') return '';
+    return action;
   };
 
-  const closeDropdown = () => {
-    if (!dropdown || !dropdownTrigger || !dropdownMenu) return;
-    dropdown.classList.remove('open');
-    dropdownTrigger.setAttribute('aria-expanded', 'false');
-    dropdownMenu.setAttribute('aria-hidden', 'true');
-    dropdownOptions.forEach((option) => option.classList.remove('is-active'));
-    activeOptionIndex = -1;
+  const getFieldLabel = (form, field) => {
+    if (!field) return 'this field';
+    const fieldId = field.getAttribute('id');
+    if (!fieldId) return field.name || 'this field';
+    const label = form.querySelector(`label[for="${fieldId}"]`);
+    return label?.textContent?.trim() || field.name || 'this field';
   };
 
-  const openDropdown = () => {
-    if (!dropdown || !dropdownTrigger || !dropdownMenu) return;
-    dropdown.classList.add('open');
-    dropdownTrigger.setAttribute('aria-expanded', 'true');
-    dropdownMenu.setAttribute('aria-hidden', 'false');
-    const selectedIndex = getSelectedOptionIndex();
-    if (selectedIndex >= 0) {
-      activeOptionIndex = selectedIndex;
-      dropdownOptions.forEach((option, optionIndex) => {
-        const isSelected = optionIndex === selectedIndex;
-        option.classList.toggle('is-active', isSelected);
-        option.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+  const setupDropdown = (dropdown) => {
+    const trigger = dropdown.querySelector('[data-dropdown-trigger]');
+    const menu = dropdown.querySelector('[data-dropdown-menu]');
+    const label = dropdown.querySelector('[data-dropdown-label]');
+    const input = dropdown.querySelector('[data-dropdown-input]');
+    const options = Array.from(dropdown.querySelectorAll('.enquiry-option'));
+    let activeOptionIndex = -1;
+
+    if (!trigger || !menu || !label || !input || !options.length) return null;
+
+    const getSelectedOptionIndex = () => {
+      const currentValue = input.value.trim();
+      return options.findIndex((option) => (option.getAttribute('data-value') || '').trim() === currentValue);
+    };
+
+    const closeDropdown = () => {
+      if (menu.contains(document.activeElement)) trigger.focus();
+      dropdown.classList.remove('open', 'drop-down');
+      trigger.setAttribute('aria-expanded', 'false');
+      menu.setAttribute('aria-hidden', 'true');
+      menu.inert = true;
+      trigger.removeAttribute('aria-activedescendant');
+      options.forEach((option) => option.classList.remove('is-active'));
+      activeOptionIndex = -1;
+    };
+
+    const openDropdown = () => {
+      const triggerRect = trigger.getBoundingClientRect();
+      const menuHeight = Math.min(menu.scrollHeight || 360, Math.round(window.innerHeight * 0.72));
+      const spaceAbove = triggerRect.top;
+      const spaceBelow = window.innerHeight - triggerRect.bottom;
+      dropdown.classList.toggle('drop-down', spaceBelow >= menuHeight || spaceBelow > spaceAbove);
+      dropdown.classList.add('open');
+      trigger.setAttribute('aria-expanded', 'true');
+      menu.setAttribute('aria-hidden', 'false');
+      menu.inert = false;
+
+      const selectedIndex = getSelectedOptionIndex();
+      options.forEach((option, optionIndex) => {
+        option.setAttribute('aria-selected', optionIndex === selectedIndex ? 'true' : 'false');
       });
-      dropdownOptions[selectedIndex].scrollIntoView({ block: 'nearest' });
-    }
-  };
+    };
 
-  const setActiveOption = (index, shouldFocus = true) => {
-    if (!dropdownOptions.length) return;
-    const boundedIndex = (index + dropdownOptions.length) % dropdownOptions.length;
-    activeOptionIndex = boundedIndex;
+    const setActiveOption = (index, shouldFocus = true) => {
+      const boundedIndex = (index + options.length) % options.length;
+      activeOptionIndex = boundedIndex;
 
-    dropdownOptions.forEach((option, optionIndex) => {
-      const isActive = optionIndex === boundedIndex;
-      option.classList.toggle('is-active', isActive);
-      option.setAttribute('aria-selected', isActive ? 'true' : 'false');
-    });
+      options.forEach((option, optionIndex) => {
+        const isActive = optionIndex === boundedIndex;
+        option.classList.toggle('is-active', isActive);
+        option.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      });
 
-    if (shouldFocus) dropdownOptions[boundedIndex].focus();
-  };
+      trigger.setAttribute('aria-activedescendant', options[boundedIndex].id);
+      if (shouldFocus) options[boundedIndex].focus();
+    };
 
-  if (dropdown && dropdownTrigger && dropdownMenu && dropdownInput && dropdownLabel) {
-    dropdownOptions.forEach((option, optionIndex) => {
-      if (!option.id) option.id = `enquiry-option-${optionIndex + 1}`;
+    options.forEach((option, optionIndex) => {
+      if (!option.id) option.id = `${menu.id || 'enquiry-option'}-${optionIndex + 1}`;
       option.setAttribute('aria-selected', 'false');
-    });
 
-    dropdownTrigger.addEventListener('click', () => {
-      if (dropdown.classList.contains('open')) {
-        closeDropdown();
-      } else {
-        openDropdown();
-      }
-    });
-
-    dropdownTrigger.addEventListener('keydown', (event) => {
-      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-        event.preventDefault();
-        openDropdown();
-        setActiveOption(event.key === 'ArrowDown' ? 0 : dropdownOptions.length - 1);
-      } else if (event.key === 'Enter' || event.key === ' ') {
-        event.preventDefault();
-        openDropdown();
-        const selectedIndex = getSelectedOptionIndex();
-        setActiveOption(selectedIndex >= 0 ? selectedIndex : 0);
-      }
-    });
-
-    dropdownOptions.forEach((option, optionIndex) => {
       option.addEventListener('click', () => {
         const value = option.getAttribute('data-value') || '';
-        dropdownInput.value = value;
-        dropdownLabel.textContent = value;
-        dropdownInput.setCustomValidity('');
+        input.value = value;
+        label.textContent = value;
+        input.setCustomValidity('');
         setActiveOption(optionIndex, false);
         clearToast();
         closeDropdown();
@@ -192,13 +172,31 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (event.key === 'Escape') {
           event.preventDefault();
           closeDropdown();
-          dropdownTrigger.focus();
+          trigger.focus();
         } else if (event.key === 'Enter' || event.key === ' ') {
           event.preventDefault();
           option.click();
-          dropdownTrigger.focus();
+          trigger.focus();
         }
       });
+    });
+
+    trigger.addEventListener('click', () => {
+      if (dropdown.classList.contains('open')) closeDropdown();
+      else openDropdown();
+    });
+
+    trigger.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault();
+        openDropdown();
+        setActiveOption(event.key === 'ArrowDown' ? 0 : options.length - 1);
+      } else if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        openDropdown();
+        const selectedIndex = getSelectedOptionIndex();
+        setActiveOption(selectedIndex >= 0 ? selectedIndex : 0);
+      }
     });
 
     document.addEventListener('click', (event) => {
@@ -206,151 +204,133 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.addEventListener('keydown', (event) => {
-      if (event.key !== 'Escape') return;
-      if (!dropdown.classList.contains('open')) return;
-      closeDropdown();
-      dropdownTrigger.focus();
+      if (event.key === 'Escape' && dropdown.classList.contains('open')) {
+        closeDropdown();
+        trigger.focus();
+      }
     });
-  }
 
-  if (!leadForm) return;
-  const honeypotField = leadForm.querySelector('input[name="website"]');
-  const campaignTokenField = leadForm.querySelector('input[name="campaign_token"]');
-  const submitButton = leadForm.querySelector('.form-submit');
-
-  const readRateLimitTimestamps = () => {
-    try {
-      const rawValue = window.localStorage.getItem(RATE_LIMIT_KEY);
-      if (!rawValue) return [];
-      const parsedValue = JSON.parse(rawValue);
-      if (!Array.isArray(parsedValue)) return [];
-      return parsedValue.filter((value) => Number.isFinite(value));
-    } catch (error) {
-      return [];
-    }
+    return { input, label, options, trigger, openDropdown, closeDropdown };
   };
 
-  const writeRateLimitTimestamps = (timestamps) => {
-    try {
-      window.localStorage.setItem(RATE_LIMIT_KEY, JSON.stringify(timestamps));
-    } catch (error) {
-      // If storage is blocked, keep graceful behavior without throwing.
-    }
-  };
-
-  const getRateLimitState = () => {
-    const now = Date.now();
-    const recentTimestamps = readRateLimitTimestamps()
-      .filter((timestamp) => now - timestamp < RATE_LIMIT_WINDOW_MS)
-      .sort((a, b) => a - b);
-    const isLimited = recentTimestamps.length >= RATE_LIMIT_MAX_SUBMISSIONS;
-    const cooldownMs = isLimited ? Math.max(0, RATE_LIMIT_WINDOW_MS - (now - recentTimestamps[0])) : 0;
-    return { recentTimestamps, isLimited, cooldownMs };
-  };
-
-  const formatCooldown = (cooldownMs) => {
-    const totalSeconds = Math.ceil(cooldownMs / 1000);
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return `${minutes}:${String(seconds).padStart(2, '0')}`;
-  };
-
-  const updateSubmitAvailability = () => {
-    if (!submitButton) return;
-    if (isSubmitFeedbackActive) return;
-    const { isLimited, cooldownMs } = getRateLimitState();
-    if (isLimited) {
-      submitButton.disabled = true;
-      submitButton.textContent = `Try again in ${formatCooldown(cooldownMs)}`;
-      submitButton.setAttribute('aria-disabled', 'true');
-    } else {
-      submitButton.disabled = false;
-      submitButton.textContent = 'Send enquiry';
-      submitButton.removeAttribute('aria-disabled');
-    }
-  };
-
-  updateSubmitAvailability();
-  window.setInterval(updateSubmitAvailability, 1000);
-
-  leadForm.addEventListener('input', () => {
-    if (dropdownInput?.value.trim()) dropdownInput.setCustomValidity('');
-    clearToast();
+  const dropdownControllers = new WeakMap();
+  document.querySelectorAll('[data-dropdown]').forEach((dropdown) => {
+    const controller = setupDropdown(dropdown);
+    if (controller) dropdownControllers.set(dropdown, controller);
   });
 
-  leadForm.addEventListener('submit', (event) => {
-    const campaignToken = campaignTokenField?.value?.trim() || '';
-    if (!campaignToken || campaignToken.includes('REPLACE_WITH_GETRESPONSE')) {
+  leadForms.forEach((form) => {
+    const submitButton = form.querySelector('.form-submit');
+    const submitButtonLabel = submitButton?.textContent || 'Send enquiry';
+    const dropdown = form.querySelector('[data-dropdown]');
+    const dropdownController = dropdown ? dropdownControllers.get(dropdown) : null;
+
+    const setSubmitState = (isBusy) => {
+      if (!submitButton) return;
+      submitButton.textContent = isBusy ? 'Sending...' : submitButtonLabel;
+      submitButton.disabled = isBusy;
+      submitButton.toggleAttribute('aria-disabled', isBusy);
+    };
+
+    const resetLeadForm = () => {
+      form.reset();
+      if (dropdownController) {
+        dropdownController.label.textContent = form.classList.contains('snapshot-form') ? 'Type of enquiry' : 'Select one';
+        dropdownController.input.value = '';
+        dropdownController.input.setCustomValidity('');
+        dropdownController.options.forEach((option) => option.setAttribute('aria-selected', 'false'));
+        dropdownController.closeDropdown();
+      }
+    };
+
+    form.addEventListener('input', () => {
+      if (dropdownController?.input.value.trim()) dropdownController.input.setCustomValidity('');
+      clearToast();
+    });
+
+    form.addEventListener('submit', (event) => {
       event.preventDefault();
-      showToast('Please set your GetResponse campaign token before submitting.', 'error');
-      return;
-    }
+      if (submittingForms.has(form)) return;
 
-    const elapsedFromLoad = Date.now() - pageLoadTime;
-    if (elapsedFromLoad < MIN_SUBMIT_DELAY_MS) {
-      event.preventDefault();
-      showToast('Please wait a moment before submitting the form.', 'error');
-      return;
-    }
+      if (form.elements.website?.value.trim()) {
+        resetLeadForm();
+        return;
+      }
 
-    if (honeypotField && honeypotField.value.trim()) {
-      event.preventDefault();
-      showToast('Submission could not be processed. Please try again.', 'error');
-      return;
-    }
+      for (const fieldName of requiredFieldOrder) {
+        const field = form.elements[fieldName];
+        if (!field) continue;
 
-    const rateLimitState = getRateLimitState();
-    if (rateLimitState.isLimited) {
-      event.preventDefault();
-      updateSubmitAvailability();
-      showToast(`Too many submissions. Please try again in ${formatCooldown(rateLimitState.cooldownMs)}.`, 'error');
-      return;
-    }
+        const value = typeof field.value === 'string' ? field.value.trim() : '';
+        if (!value) {
+          if (fieldName === 'custom_enquiry_type' && dropdownController) {
+            dropdownController.openDropdown();
+            dropdownController.trigger.focus();
+          } else if (typeof field.focus === 'function') {
+            field.focus();
+          }
 
-    for (const fieldName of requiredFieldOrder) {
-      const field = leadForm.elements[fieldName];
-      if (!field) continue;
-
-      const value = typeof field.value === 'string' ? field.value.trim() : '';
-      if (!value) {
-        event.preventDefault();
-
-        if (fieldName === 'custom_enquiry_type') {
-          openDropdown();
-          dropdownTrigger?.focus();
-        } else if (typeof field.focus === 'function') {
-          field.focus();
+          showToast(`Please fill ${getFieldLabel(form, field)} field.`, 'error');
+          return;
         }
 
-        showToast(`Please fill ${getFieldLabel(field)} field.`, 'error');
+        if (typeof field.value === 'string' && field.value !== value) field.value = value;
+
+        const maxLength = maxFieldLengths[fieldName];
+        if (maxLength && value.length > maxLength) {
+          field.focus();
+          showToast(`${getFieldLabel(form, field)} is too long. Please shorten it.`, 'error');
+          return;
+        }
+
+        if (fieldName === 'email' && typeof field.checkValidity === 'function' && !field.checkValidity()) {
+          field.focus();
+          showToast('Please fill Work email with a valid email address.', 'error');
+          return;
+        }
+      }
+
+      ['custom_phone', 'custom_message'].forEach((fieldName) => {
+        const field = form.elements[fieldName];
+        if (!field || typeof field.value !== 'string') return;
+        field.value = field.value.trim();
+      });
+
+      const optionalMessage = form.elements.custom_message;
+      if (optionalMessage?.value.length > maxFieldLengths.custom_message) {
+        optionalMessage.focus();
+        showToast('Message is too long. Please shorten it.', 'error');
         return;
       }
 
-      if (typeof field.value === 'string' && field.value !== value) {
-        field.value = value;
-      }
-
-      if (fieldName === 'email' && typeof field.checkValidity === 'function' && !field.checkValidity()) {
-        event.preventDefault();
-        field.focus();
-        showToast('Please fill Work email with a valid email address.', 'error');
+      const formAction = getLeadFormAction(form);
+      if (!formAction) {
+        showToast('This enquiry form is waiting for the Google Apps Script URL.', 'error');
         return;
       }
-    }
 
-    if (!submitButton) return;
-    writeRateLimitTimestamps([...rateLimitState.recentTimestamps, Date.now()]);
-    updateSubmitAvailability();
+      if (!submitButton) return;
+      submittingForms.add(form);
+      setSubmitState(true);
+      const submissionData = new FormData(form);
+      submissionData.delete('website');
 
-    showToast('Thanks for reaching out. Your enquiry is being submitted.', 'success');
-
-    isSubmitFeedbackActive = true;
-    submitButton.textContent = 'Submitting...';
-    if (submitResetTimer) window.clearTimeout(submitResetTimer);
-    submitResetTimer = window.setTimeout(() => {
-      isSubmitFeedbackActive = false;
-      updateSubmitAvailability();
-      submitResetTimer = null;
-    }, 2400);
+      fetch(formAction, {
+        method: 'POST',
+        mode: 'no-cors',
+        body: new URLSearchParams(submissionData)
+      })
+        .then(() => {
+          resetLeadForm();
+          showToast('Thanks. Your enquiry has been sent.', 'success');
+        })
+        .catch(() => {
+          showToast('We could not send your enquiry. Please try again or email maja@amhtours.com.', 'error');
+        })
+        .finally(() => {
+          setSubmitState(false);
+          submittingForms.delete(form);
+        });
+    });
   });
 });
