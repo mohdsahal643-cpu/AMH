@@ -670,8 +670,8 @@ textarea:focus-visible {
   border-radius: var(--radius);
   background: var(--panel);
   box-shadow: none;
-  max-height: none;
-  overflow-y: visible;
+  max-height: min(360px, calc(100vh - 7rem));
+  overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: thin;
   scrollbar-color: var(--gold) var(--panel-strong);
@@ -1671,6 +1671,16 @@ a.contact-method em {
 
   .logo-marquee {
     animation: none;
+  }
+
+  .client-logo-viewport,
+  .partner-logo-viewport {
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .logo-marquee-set[aria-hidden="true"] {
+    display: none;
   }
 
   *,

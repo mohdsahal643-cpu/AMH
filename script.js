@@ -219,6 +219,31 @@ document.addEventListener('DOMContentLoaded', () => {
     if (controller) dropdownControllers.set(dropdown, controller);
   });
 
+  const createSubmissionBody = (submissionData) => new URLSearchParams(submissionData);
+
+  const submitLeadFormData = (formAction, submissionData) => {
+    const submitWithResponse = () => fetch(formAction, {
+      method: 'POST',
+      // Forces a CORS preflight so fallback submission does not duplicate a processed POST.
+      headers: { 'X-AMH-Submission': 'fetch' },
+      body: createSubmissionBody(submissionData)
+    }).then((response) => {
+      if (!response.ok) throw new Error(`Form submission failed with status ${response.status}`);
+      return { verified: true };
+    });
+
+    const submitWithoutResponse = () => fetch(formAction, {
+      method: 'POST',
+      mode: 'no-cors',
+      body: createSubmissionBody(submissionData)
+    }).then(() => ({ verified: false }));
+
+    return submitWithResponse().catch((error) => {
+      if (error instanceof TypeError) return submitWithoutResponse();
+      throw error;
+    });
+  };
+
   leadForms.forEach((form) => {
     const submitButton = form.querySelector('.form-submit');
     const submitButtonLabel = submitButton?.textContent || 'Send enquiry';
@@ -315,14 +340,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const submissionData = new FormData(form);
       submissionData.delete('website');
 
-      fetch(formAction, {
-        method: 'POST',
-        mode: 'no-cors',
-        body: new URLSearchParams(submissionData)
-      })
-        .then(() => {
+      submitLeadFormData(formAction, submissionData)
+        .then(({ verified }) => {
           resetLeadForm();
-          showToast('Thanks. Your enquiry has been sent.', 'success');
+          showToast(verified ? 'Thanks. Your enquiry has been sent.' : 'Thanks. Your enquiry has been submitted.', 'success');
         })
         .catch(() => {
           showToast('We could not send your enquiry. Please try again or email maja@amhtours.com.', 'error');
