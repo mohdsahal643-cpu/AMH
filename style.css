@@ -933,6 +933,11 @@ textarea:focus-visible {
   margin: 0.95rem 0 0;
 }
 
+.platform-cta {
+  margin-top: 1.25rem;
+  padding: 0 1.1rem;
+}
+
 .process-list {
   display: flex;
   flex-direction: column;
@@ -981,90 +986,78 @@ textarea:focus-visible {
   color: var(--text);
 }
 
-.about-proof-list {
+.about-mini-grid {
+  align-self: stretch;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.72rem;
+}
+
+.about-mini-card {
+  min-height: 152px;
   display: flex;
-  flex-direction: column;
-  gap: 0.65rem;
-  margin-top: 1.25rem;
-}
-
-.about-proof-list span {
-  position: relative;
+  align-items: center;
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: var(--radius-sm);
   background: var(--panel);
+  padding: clamp(1rem, 2vw, 1.25rem);
+}
+
+.about-mini-card h3 {
+  margin: 0;
   color: var(--text-soft);
-  font-size: 0.9rem;
-  line-height: 1.55;
-  padding: 0.82rem 0.9rem 0.82rem 2rem;
+  font-size: clamp(1rem, 1.7vw, 1.12rem);
+  font-weight: 800;
+  line-height: 1.35;
 }
 
-.about-proof-list span::before {
-  content: "";
-  position: absolute;
-  left: 0.95rem;
-  top: 1.45rem;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: var(--cyan);
-}
-
-.about-feature {
+.about-highlight-mini {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(240px, 0.65fr) minmax(0, 1fr);
+  gap: clamp(1rem, 3vw, 2rem);
+  align-items: center;
   border: 1px solid var(--line);
   border-left: 2px solid var(--cyan);
   border-radius: var(--radius);
   background: var(--panel);
-  padding: clamp(1rem, 2vw, 1.45rem);
+  padding: clamp(1rem, 2vw, 1.35rem);
 }
 
-.about-feature h3 {
+.about-highlight-mini .eyebrow {
+  margin-bottom: 0.72rem;
+}
+
+.about-highlight-mini h3 {
   margin: 0;
   font-family: "Cormorant Garamond", Georgia, serif;
-  font-size: clamp(1.45rem, 2.8vw, 1.9rem);
+  font-size: clamp(1.45rem, 2.7vw, 1.9rem);
   font-weight: 600;
   line-height: 1.15;
 }
 
-.about-feature p,
-.about-feature li {
+.about-highlight-mini p:not(.eyebrow) {
+  margin: 0;
   color: var(--text-soft);
-  font-size: 0.9rem;
+  font-size: 0.92rem;
   line-height: 1.65;
 }
 
-.about-feature ul {
+.about-highlight-tags {
+  grid-column: 1 / -1;
   display: flex;
-  flex-direction: column;
-  gap: 0.65rem;
-  margin: 1rem 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.about-feature li {
-  position: relative;
-  padding-left: 1.3rem;
-}
-
-.about-feature li::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0.82rem;
-  width: 14px;
-  height: 1px;
-  background: var(--line);
-}
-
-.about-tags {
-  display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 0.55rem;
-  margin-top: 1.2rem;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
 
-.about-tags span {
+.about-highlight-tags::-webkit-scrollbar {
+  display: none;
+}
+
+.about-highlight-tags span {
+  flex: 0 0 auto;
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   color: var(--text-muted);
@@ -1073,6 +1066,7 @@ textarea:focus-visible {
   letter-spacing: 0.12em;
   line-height: 1.2;
   padding: 0.45rem 0.7rem;
+  white-space: nowrap;
   text-transform: uppercase;
 }
 
@@ -1139,30 +1133,51 @@ textarea:focus-visible {
   padding: 0.85rem;
 }
 
+.client-logo-viewport,
+.partner-logo-viewport {
+  overflow: hidden;
+  margin-top: 1.2rem;
+}
+
+.logo-marquee {
+  display: flex;
+  width: max-content;
+  gap: 0.72rem;
+  animation: logo-marquee-scroll var(--marquee-duration, 34s) linear infinite;
+  will-change: transform;
+}
+
 .client-logos {
-  scrollbar-width: thin;
-  scrollbar-color: var(--gold) transparent;
+  --marquee-duration: 30s;
 }
 
-.client-logos img {
-  scroll-snap-align: center;
+.partner-logos {
+  --marquee-duration: 70s;
 }
 
-.client-logos::-webkit-scrollbar {
-  height: 6px;
+.logo-marquee-set {
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  margin-top: 0;
 }
 
-.client-logos::-webkit-scrollbar-track {
-  background: transparent;
+.logo-marquee-set img {
+  flex: 0 0 150px;
 }
 
-.client-logos::-webkit-scrollbar-thumb {
-  border-radius: 999px;
-  background: var(--gold);
+.logo-marquee:hover,
+.logo-marquee:focus-within {
+  animation-play-state: paused;
 }
 
-.client-logos img[aria-hidden="true"] {
-  display: none;
+@keyframes logo-marquee-scroll {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(calc(-50% - 0.36rem));
+  }
 }
 
 .partner-logos img {
@@ -1379,6 +1394,10 @@ a.contact-method em {
   .hero-snapshot {
     max-width: 760px;
   }
+
+  .about-mini-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 820px) {
@@ -1417,51 +1436,6 @@ a.contact-method em {
   .footer-bottom {
     align-items: center;
     flex-direction: column;
-  }
-}
-
-@media (max-width: 900px) {
-  .client-logo-viewport {
-    overflow: hidden;
-    margin-top: 1.2rem;
-  }
-
-  .client-logos {
-    flex-wrap: nowrap;
-    justify-content: flex-start;
-    width: max-content;
-    overflow-x: visible;
-    overflow-y: hidden;
-    gap: 0.72rem;
-    margin-top: 0;
-    scroll-padding-inline: 1rem;
-    scroll-snap-type: none;
-    padding: 0 0.2rem 0.65rem;
-    animation: client-logo-scroll 22s linear infinite;
-    will-change: transform;
-  }
-
-  .client-logos img {
-    flex: 0 0 150px;
-  }
-
-  .client-logos img[aria-hidden="true"] {
-    display: block;
-  }
-
-  .client-logos:hover,
-  .client-logos:focus-within {
-    animation-play-state: paused;
-  }
-}
-
-@keyframes client-logo-scroll {
-  from {
-    transform: translateX(0);
-  }
-
-  to {
-    transform: translateX(calc(-900px - (0.72rem * 6)));
   }
 }
 
@@ -1586,13 +1560,9 @@ a.contact-method em {
     padding: 0.68rem;
   }
 
-  .client-logos img {
+  .logo-marquee-set img {
     width: 150px;
-    flex-basis: 150px;
-  }
-
-  .client-logos {
-    gap: 0.72rem;
+    flex: 0 0 150px;
   }
 
   .trust-item,
@@ -1614,6 +1584,18 @@ a.contact-method em {
   .process-item {
     grid-template-columns: 1fr;
     gap: 0.5rem;
+  }
+
+  .about-mini-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .about-highlight-mini {
+    grid-template-columns: 1fr;
+  }
+
+  .about-mini-card {
+    min-height: 118px;
   }
 
   .proof-card {
@@ -1744,9 +1726,8 @@ a.contact-method em {
     scroll-behavior: auto;
   }
 
-  .client-logos {
+  .logo-marquee {
     animation: none;
-    overflow-x: auto;
   }
 
   *,
