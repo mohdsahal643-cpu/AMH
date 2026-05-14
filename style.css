@@ -1139,6 +1139,32 @@ textarea:focus-visible {
   padding: 0.85rem;
 }
 
+.client-logos {
+  scrollbar-width: thin;
+  scrollbar-color: var(--gold) transparent;
+}
+
+.client-logos img {
+  scroll-snap-align: center;
+}
+
+.client-logos::-webkit-scrollbar {
+  height: 6px;
+}
+
+.client-logos::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.client-logos::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: var(--gold);
+}
+
+.client-logos img[aria-hidden="true"] {
+  display: none;
+}
+
 .partner-logos img {
   height: 76px;
 }
@@ -1394,6 +1420,51 @@ a.contact-method em {
   }
 }
 
+@media (max-width: 900px) {
+  .client-logo-viewport {
+    overflow: hidden;
+    margin-top: 1.2rem;
+  }
+
+  .client-logos {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    width: max-content;
+    overflow-x: visible;
+    overflow-y: hidden;
+    gap: 0.72rem;
+    margin-top: 0;
+    scroll-padding-inline: 1rem;
+    scroll-snap-type: none;
+    padding: 0 0.2rem 0.65rem;
+    animation: client-logo-scroll 22s linear infinite;
+    will-change: transform;
+  }
+
+  .client-logos img {
+    flex: 0 0 150px;
+  }
+
+  .client-logos img[aria-hidden="true"] {
+    display: block;
+  }
+
+  .client-logos:hover,
+  .client-logos:focus-within {
+    animation-play-state: paused;
+  }
+}
+
+@keyframes client-logo-scroll {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(calc(-900px - (0.72rem * 6)));
+  }
+}
+
 @media (max-width: 640px) {
   .nav,
   .hero,
@@ -1513,6 +1584,15 @@ a.contact-method em {
     width: calc(50% - 0.3rem);
     height: 76px;
     padding: 0.68rem;
+  }
+
+  .client-logos img {
+    width: 150px;
+    flex-basis: 150px;
+  }
+
+  .client-logos {
+    gap: 0.72rem;
   }
 
   .trust-item,
@@ -1662,6 +1742,11 @@ a.contact-method em {
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
+  }
+
+  .client-logos {
+    animation: none;
+    overflow-x: auto;
   }
 
   *,
