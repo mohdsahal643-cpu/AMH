@@ -1011,66 +1011,6 @@ textarea:focus-visible {
   line-height: 1.35;
 }
 
-.about-highlight-mini {
-  grid-column: 1 / -1;
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.9rem;
-  align-items: start;
-  border: 1px solid var(--line);
-  border-left: 2px solid var(--cyan);
-  border-radius: var(--radius);
-  background: var(--panel);
-  padding: clamp(1rem, 2vw, 1.35rem);
-}
-
-.about-highlight-mini .eyebrow {
-  margin-bottom: 0.72rem;
-}
-
-.about-highlight-mini h3 {
-  margin: 0;
-  font-family: "Cormorant Garamond", Georgia, serif;
-  font-size: clamp(1.45rem, 2.7vw, 1.9rem);
-  font-weight: 600;
-  line-height: 1.15;
-  white-space: nowrap;
-}
-
-.about-highlight-mini p:not(.eyebrow) {
-  margin: 0;
-  color: var(--text-soft);
-  font-size: 0.92rem;
-  line-height: 1.65;
-}
-
-.about-highlight-tags {
-  grid-column: 1 / -1;
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 0.55rem;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.about-highlight-tags::-webkit-scrollbar {
-  display: none;
-}
-
-.about-highlight-tags span {
-  flex: 0 0 auto;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  color: var(--text-muted);
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  line-height: 1.2;
-  padding: 0.45rem 0.7rem;
-  white-space: nowrap;
-  text-transform: uppercase;
-}
-
 .partners-section,
 .clients-section {
   padding: 1.8rem 0;
@@ -1183,6 +1123,12 @@ textarea:focus-visible {
 
 .partner-logos img {
   height: 76px;
+}
+
+.partner-logos img[src$="Europcar.png"] {
+  object-fit: cover;
+  object-position: center 58%;
+  padding: 0.35rem;
 }
 
 .contact-section {
@@ -1589,10 +1535,6 @@ a.contact-method em {
 
   .about-mini-grid {
     grid-template-columns: 1fr;
-  }
-
-  .about-highlight-mini h3 {
-    white-space: normal;
   }
 
   .about-mini-card {
