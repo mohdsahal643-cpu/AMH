@@ -1014,9 +1014,9 @@ textarea:focus-visible {
 .about-highlight-mini {
   grid-column: 1 / -1;
   display: grid;
-  grid-template-columns: minmax(240px, 0.65fr) minmax(0, 1fr);
-  gap: clamp(1rem, 3vw, 2rem);
-  align-items: center;
+  grid-template-columns: 1fr;
+  gap: 0.9rem;
+  align-items: start;
   border: 1px solid var(--line);
   border-left: 2px solid var(--cyan);
   border-radius: var(--radius);
@@ -1034,6 +1034,7 @@ textarea:focus-visible {
   font-size: clamp(1.45rem, 2.7vw, 1.9rem);
   font-weight: 600;
   line-height: 1.15;
+  white-space: nowrap;
 }
 
 .about-highlight-mini p:not(.eyebrow) {
@@ -1590,8 +1591,8 @@ a.contact-method em {
     grid-template-columns: 1fr;
   }
 
-  .about-highlight-mini {
-    grid-template-columns: 1fr;
+  .about-highlight-mini h3 {
+    white-space: normal;
   }
 
   .about-mini-card {
