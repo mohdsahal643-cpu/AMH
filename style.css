@@ -994,16 +994,47 @@ textarea:focus-visible {
 }
 
 .about-mini-card {
+  position: relative;
   min-height: 152px;
   display: flex;
   align-items: center;
+  overflow: hidden;
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   background: var(--panel);
   padding: clamp(1rem, 2vw, 1.25rem);
 }
 
+.about-mini-card::before {
+  content: attr(data-logo);
+  position: absolute;
+  left: 50%;
+  bottom: 0.55rem;
+  color: var(--text);
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: clamp(2.15rem, 4.2vw, 3.45rem);
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1;
+  opacity: 0.045;
+  pointer-events: none;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.about-mini-card-fcb::before {
+  content: "";
+  left: 50%;
+  bottom: 0.55rem;
+  width: clamp(3.1rem, 5.4vw, 4.15rem);
+  height: clamp(3.1rem, 5.4vw, 4.15rem);
+  background: url("images/Clients/FC Barcelona-modified.png") center bottom / contain no-repeat;
+  transform: translateX(-50%);
+}
+
 .about-mini-card h3 {
+  position: relative;
+  z-index: 1;
   margin: 0;
   color: var(--text-soft);
   font-size: clamp(1rem, 1.7vw, 1.12rem);
@@ -1068,6 +1099,7 @@ textarea:focus-visible {
   width: 150px;
   height: 86px;
   object-fit: contain;
+  object-position: center;
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   background: #fff;
@@ -1125,10 +1157,25 @@ textarea:focus-visible {
   height: 76px;
 }
 
-.partner-logos img[src$="Europcar.png"] {
-  object-fit: cover;
-  object-position: center 58%;
-  padding: 0.35rem;
+.partner-logos img[src$="Europcar.svg"] {
+  object-fit: contain;
+  object-position: center;
+  padding: 0.38rem;
+}
+
+.partner-logos img[src$="cruise.jpeg"],
+.partner-logos img[src$="msc.png"] {
+  object-fit: contain;
+  object-position: center;
+  padding: 0.16rem;
+}
+
+.partner-logos img[src$="EHS.png"],
+.partner-logos img[src$="download-Museum of the Future.png"],
+.partner-logos img[src$="insight vacations.png"] {
+  object-fit: contain;
+  object-position: center;
+  padding: 0.22rem;
 }
 
 .contact-section {

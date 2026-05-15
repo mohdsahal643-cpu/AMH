@@ -10,6 +10,8 @@ document.addEventListener('DOMContentLoaded', () => {
     custom_phone: 32,
     custom_message: 1200
   };
+  const sheetFieldNames = ['name', 'custom_company', 'email', 'custom_phone', 'custom_enquiry_type', 'custom_message'];
+  const notProvidedValue = 'Not provided';
   let toastResetTimer = null;
   const submittingForms = new WeakSet();
 
@@ -219,6 +221,18 @@ document.addEventListener('DOMContentLoaded', () => {
     if (controller) dropdownControllers.set(dropdown, controller);
   });
 
+  const prepareSubmissionData = (form) => {
+    const submissionData = new FormData(form);
+    submissionData.delete('website');
+
+    sheetFieldNames.forEach((fieldName) => {
+      const value = (submissionData.get(fieldName) || '').toString().trim();
+      submissionData.set(fieldName, value || notProvidedValue);
+    });
+
+    return submissionData;
+  };
+
   const createSubmissionBody = (submissionData) => new URLSearchParams(submissionData);
 
   const submitLeadFormData = (formAction, submissionData) => {
@@ -337,8 +351,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!submitButton) return;
       submittingForms.add(form);
       setSubmitState(true);
-      const submissionData = new FormData(form);
-      submissionData.delete('website');
+      const submissionData = prepareSubmissionData(form);
 
       submitLeadFormData(formAction, submissionData)
         .then(({ verified }) => {
