@@ -1008,28 +1008,30 @@ textarea:focus-visible {
 .about-mini-card::before {
   content: attr(data-logo);
   position: absolute;
-  left: 50%;
-  bottom: 0.55rem;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: var(--text);
   font-family: "Cormorant Garamond", Georgia, serif;
-  font-size: clamp(2.15rem, 4.2vw, 3.45rem);
+  font-size: clamp(3.85rem, 10vw, 7.2rem);
   font-weight: 700;
   letter-spacing: 0;
   line-height: 1;
   opacity: 0.045;
   pointer-events: none;
-  transform: translateX(-50%);
   white-space: nowrap;
 }
 
 .about-mini-card-fcb::before {
   content: "";
-  left: 50%;
-  bottom: 0.55rem;
-  width: clamp(3.1rem, 5.4vw, 4.15rem);
-  height: clamp(3.1rem, 5.4vw, 4.15rem);
-  background: url("images/Clients/FC Barcelona-modified.png") center bottom / contain no-repeat;
-  transform: translateX(-50%);
+  background: url("images/Clients/FC Barcelona-modified.png") center / clamp(5.2rem, 52%, 8rem) auto no-repeat;
+}
+
+.about-mini-card-samena::before {
+  font-size: clamp(2.8rem, 5.8vw, 4.85rem);
+  transform: scaleX(0.74);
+  transform-origin: center;
 }
 
 .about-mini-card h3 {
