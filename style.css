@@ -1133,6 +1133,16 @@ textarea:focus-visible {
   --marquee-duration: 30s;
 }
 
+.client-logos img[src$="samena-lead-cropped.png"],
+.client-logos img[src$="samena-tele.png"] {
+  padding: 0.24rem;
+}
+
+.client-logos img[src$="samena-lead-cropped.png"] {
+  padding: 0.1rem;
+  object-fit: contain;
+}
+
 .partner-logos {
   --marquee-duration: 70s;
 }
