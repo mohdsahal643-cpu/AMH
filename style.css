@@ -1028,6 +1028,13 @@ textarea:focus-visible {
   background: url("images/Clients/FC Barcelona-modified.png") center / clamp(5.2rem, 52%, 8rem) auto no-repeat;
 }
 
+.about-mini-card-dsc::before {
+  content: "";
+  background: url("images/Clients/dsc-bw.png") center / clamp(15rem, 125%, 21rem) auto no-repeat;
+  transform: scaleY(0.82);
+  transform-origin: center;
+}
+
 .about-mini-card-samena::before {
   font-size: clamp(2.8rem, 5.8vw, 4.85rem);
   transform: scaleX(0.74);
